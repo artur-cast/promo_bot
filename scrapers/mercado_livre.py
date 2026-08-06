@@ -16,11 +16,12 @@ import os
 import time
 import requests
 from typing import List, Optional
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 
 from scrapers.base import Promo
 
-load_dotenv()
+ENV_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+load_dotenv(ENV_PATH)
 
 CLIENT_ID = os.getenv("ML_CLIENT_ID")
 CLIENT_SECRET = os.getenv("ML_CLIENT_SECRET")
@@ -33,6 +34,8 @@ _token_cache = {"access_token": None, "expires_at": 0}
 
 def _get_access_token() -> str:
     """Retorna um access_token válido, renovando via refresh_token se preciso."""
+    global REFRESH_TOKEN
+
     if _token_cache["access_token"] and time.time() < _token_cache["expires_at"]:
         return _token_cache["access_token"]
 
@@ -52,9 +55,14 @@ def _get_access_token() -> str:
     # renova um pouco antes de expirar de verdade (margem de 60s)
     _token_cache["expires_at"] = time.time() + data["expires_in"] - 60
 
-    # Nota: o Mercado Livre pode rotacionar o refresh_token a cada uso.
-    # Se isso acontecer no seu app, salve data.get("refresh_token") de volta
-    # no seu armazenamento de configuração.
+    # IMPORTANTE: o Mercado Livre rotaciona o refresh_token a cada uso — o
+    # token antigo se torna inválido assim que um novo é emitido. Por isso
+    # salvamos o novo valor de volta no .env automaticamente, senão o bot
+    # para de funcionar na próxima vez que reiniciar.
+    new_refresh_token = data.get("refresh_token")
+    if new_refresh_token and new_refresh_token != REFRESH_TOKEN:
+        REFRESH_TOKEN = new_refresh_token
+        set_key(ENV_PATH, "ML_REFRESH_TOKEN", new_refresh_token)
 
     return _token_cache["access_token"]
 
