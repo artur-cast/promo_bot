@@ -9,6 +9,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from config import BOT_TOKEN, CHAT_ID, CHECK_INTERVAL_MINUTES, MIN_DISCOUNT_PERCENT
 from database import init_db, already_sent, mark_as_sent
 from scrapers.mercado_livre import fetch_promos_ml
+from scrapers.lomadee import fetch_promos_lomadee
+from scrapers.awin import fetch_promos_awin
 from scrapers.example_source import fetch_promos_mock
 
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +36,8 @@ stats = {
 # ---------------------------------------------------------------------------
 SOURCES = [
     ("mercado_livre", fetch_promos_ml),
+    ("lomadee", fetch_promos_lomadee),
+    ("awin", fetch_promos_awin),
     ("mock", fetch_promos_mock),  # remova depois que tiver fontes reais suficientes
 ]
 
